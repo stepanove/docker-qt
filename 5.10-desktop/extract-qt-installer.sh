@@ -1,7 +1,9 @@
-#!/bin/sh -e
+#!/bin/bash
 # QT-CI Project
 # License: Apache-2.0
 # https://github.com/benlau/qtci
+
+set -e #quit on error
 
 if [ $# -lt 2 ];
 then
@@ -9,25 +11,62 @@ then
     exit -1
 fi
 
+export PATH=$PATH:$PWD
+export WORKDIR=$PWD
 INSTALLER=$1
 OUTPUT=$2
 SCRIPT="$(mktemp /tmp/tmp.XXXXXXXXX)"
 PACKAGES=$QT_CI_PACKAGES
 
+if [[ ! "${OUTPUT:0:1}" = "/" ]] 
+then 
+    echo output path must be an absolute path
+    exit -1
+fi
+
 cat <<EOF > $SCRIPT
+
+function abortInstaller()
+{
+    installer.setDefaultPageVisible(QInstaller.Introduction, false);
+    installer.setDefaultPageVisible(QInstaller.TargetDirectory, false);
+    installer.setDefaultPageVisible(QInstaller.ComponentSelection, false);
+    installer.setDefaultPageVisible(QInstaller.ReadyForInstallation, false);
+    installer.setDefaultPageVisible(QInstaller.StartMenuSelection, false);
+    installer.setDefaultPageVisible(QInstaller.PerformInstallation, false);
+    installer.setDefaultPageVisible(QInstaller.LicenseCheck, false);
+
+    var abortText = "<font color='red' size=3>" + qsTr("Installation failed:") + "</font>";
+
+    var error_list = installer.value("component_errors").split(";;;");
+    abortText += "<ul>";
+    // ignore the first empty one
+    for (var i = 0; i < error_list.length; ++i) {
+        if (error_list[i] !== "") {
+            log(error_list[i]);
+            abortText += "<li>" + error_list[i] + "</li>"
+        }
+    }
+    abortText += "</ul>";
+    installer.setValue("FinishedText", abortText);
+}
+
+function log() {
+    var msg = ["QTCI: "].concat([].slice.call(arguments));
+    console.log(msg.join(" "));
+}
+
 function Controller() {
     installer.installationFinished.connect(function() {
         gui.clickButton(buttons.NextButton);
     });
-
     installer.setMessageBoxAutomaticAnswer("OverwriteTargetDirectory", QMessageBox.Yes);
     installer.setMessageBoxAutomaticAnswer("installationErrorWithRetry", QMessageBox.Ignore);
-
 }
 
 Controller.prototype.WelcomePageCallback = function() {
-    console.log("Welcome Page");
-    gui.clickButton(buttons.NextButton, 3000);
+    log("Welcome Page");
+    gui.clickButton(buttons.NextButton, 1000);
 }
 
 Controller.prototype.CredentialsPageCallback = function() {
@@ -35,7 +74,15 @@ Controller.prototype.CredentialsPageCallback = function() {
 }
 
 Controller.prototype.ComponentSelectionPageCallback = function() {
-    console.log("Select components");
+
+    var components = installer.components();
+    log("Available components: " + components.length);
+
+    for (var i = 0 ; i < components.length ;i++) {
+        log(components[i].name);
+    }
+
+    log("Select components");
 
     function trim(str) {
         return str.replace(/^ +/,"").replace(/ *$/,"");
@@ -48,37 +95,36 @@ Controller.prototype.ComponentSelectionPageCallback = function() {
         widget.deselectAll();
         for (var i in packages) {
             var pkg = trim(packages[i]);
-            console.log("Select " + pkg);
-            widget.selectComponent(pkg);
+	        log("Select " + pkg);
+	        widget.selectComponent(pkg);
         }
     } else {
-       console.log("Use default component list");
+       log("Use default component list");
     }
 
     gui.clickButton(buttons.NextButton);
 }
 
 Controller.prototype.IntroductionPageCallback = function() {
-    console.log("Introduction Page");
-    console.log("Retrieving meta information from remote repository");
+    log("Introduction Page");
+    log("Retrieving meta information from remote repository");
     gui.clickButton(buttons.NextButton);
 }
 
 
 Controller.prototype.TargetDirectoryPageCallback = function() {
-    console.log("Set target installation page: $OUTPUT");
+    log("Set target installation page: $OUTPUT");
     var widget = gui.currentPageWidget();
 
     if (widget != null) {
         widget.TargetDirectoryLineEdit.setText("$OUTPUT");
     }
-
+    
     gui.clickButton(buttons.NextButton);
-
 }
 
 Controller.prototype.LicenseAgreementPageCallback = function() {
-    console.log("Accept license agreement");
+    log("Accept license agreement");
     var widget = gui.currentPageWidget();
 
     if (widget != null) {
@@ -90,7 +136,12 @@ Controller.prototype.LicenseAgreementPageCallback = function() {
 }
 
 Controller.prototype.ReadyForInstallationPageCallback = function() {
-    console.log("Ready to install");
+    log("Ready to install");
+    gui.clickButton(buttons.CommitButton);
+}
+
+Controller.prototype.PerformInstallationPageCallback = function() {
+    log("PerformInstallationPageCallback");
     gui.clickButton(buttons.CommitButton);
 }
 
@@ -103,7 +154,17 @@ Controller.prototype.FinishedPageCallback = function() {
     }
     gui.clickButton(buttons.FinishButton);
 }
+
 EOF
 
-chmod u+x $INSTALLER
-QT_QPA_PLATFORM=minimal $INSTALLER -v --script $SCRIPT
+ARGS="-v"
+
+chmod u+x $1
+
+
+if [ -n "$VERBOSE" ]
+then
+    QT_QPA_PLATFORM=minimal $INSTALLER $ARGS --script $SCRIPT
+else
+    QT_QPA_PLATFORM=minimal $INSTALLER $ARGS --script $SCRIPT | grep "\(QTCI\|operation\)"
+fi
