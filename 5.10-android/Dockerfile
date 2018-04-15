@@ -9,6 +9,7 @@ ARG NDK_VERSION=r17b
 ARG SDK_PLATFORM=android-21
 ARG SDK_BUILD_TOOLS=21.1.2
 ARG SDK_PACKAGES="tools platform-tools"
+ARG OPENSSL_VERSION=1.0.2o
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV QT_PATH /opt/Qt
@@ -32,6 +33,8 @@ ENV PATH ${QT_ANDROID}/bin:${ANDROID_HOME}/tools:${ANDROID_HOME}/tools/bin:${AND
 #  * make, default-jdk, ant - basic build requirements
 #  * libsm6, libice6, libxext6, libxrender1, libfontconfig1, libdbus-1-3 - dependencies of Qt bundle run-file
 #  * libc6:i386, libncurses5:i386, libstdc++6:i386, libz1:i386 - dependencides of android sdk binaries
+#  * wget - another download utility
+#  * patch - to apply patches
 RUN dpkg --add-architecture i386 && apt update && apt full-upgrade -y && apt install -y --no-install-recommends \
     unzip \
     git \
@@ -54,9 +57,10 @@ RUN dpkg --add-architecture i386 && apt update && apt full-upgrade -y && apt ins
     libstdc++6:i386 \
     libz1:i386 \
     wget \
+    patch \
     && apt-get -qq clean
 
-COPY extract-qt-installer.sh /tmp/qt/
+COPY build-openssl.sh extract-qt-installer.sh /tmp/qt/
 
 # Download & unpack Qt toolchains & clean
 RUN curl -Lo /tmp/qt/installer.run "https://download.qt-project.org/official_releases/qt/$(echo "${QT_VERSION}" | cut -d. -f 1-2)/${QT_VERSION}/qt-opensource-linux-x64-${QT_VERSION}.run" \
@@ -73,6 +77,9 @@ RUN curl -Lo /tmp/sdk-tools.zip 'https://dl.google.com/android/repository/sdk-to
 RUN mkdir /tmp/android && cd /tmp/android && curl -Lo ndk.zip "https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux-x86_64.zip" \
     && unzip -q ndk.zip && mv android-ndk-* $ANDROID_NDK_ROOT && chmod -R +rX $ANDROID_NDK_ROOT \
     && rm -rf /tmp/android
+    
+# Download and build OpenSSL for Android
+RUN /tmp/qt/build-openssl.sh
 
 # Reconfigure locale
 RUN locale-gen en_US.UTF-8 && dpkg-reconfigure locales
