@@ -37,6 +37,7 @@ RUN apt update && apt full-upgrade -y && apt install -y --no-install-recommends 
     libssl-dev \
     wget \
     fuse \
+    file \
     && apt-get -qq clean
 
 COPY extract-qt-installer.sh /tmp/qt/
