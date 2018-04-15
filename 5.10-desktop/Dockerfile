@@ -35,6 +35,7 @@ RUN apt update && apt full-upgrade -y && apt install -y --no-install-recommends 
     libdbus-1-3 \
     libsdl2-dev \
     libssl-dev \
+    wget \
     && apt-get -qq clean
 
 COPY extract-qt-installer.sh /tmp/qt/

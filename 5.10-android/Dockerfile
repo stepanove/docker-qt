@@ -53,6 +53,7 @@ RUN dpkg --add-architecture i386 && apt update && apt full-upgrade -y && apt ins
     libncurses5:i386 \
     libstdc++6:i386 \
     libz1:i386 \
+    wget \
     && apt-get -qq clean
 
 COPY extract-qt-installer.sh /tmp/qt/
