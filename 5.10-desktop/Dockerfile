@@ -17,6 +17,8 @@ ENV PATH $QT_DESKTOP/bin:$PATH
 #  * curl - to download Qt bundle
 #  * build-essential, pkg-config, libgl1-mesa-dev - basic Qt build requirements
 #  * libsm6, libice6, libxext6, libxrender1, libfontconfig1, libdbus-1-3 - dependencies of the Qt bundle run-file
+#  * wget - another download utility
+#  * fuse, file - linuxdeployqt dependencies
 RUN apt update && apt full-upgrade -y && apt install -y --no-install-recommends \
     git \
     openssh-client \
@@ -48,6 +50,10 @@ RUN curl -Lo /tmp/qt/installer.run "https://download.qt-project.org/official_rel
     && find "$QT_PATH" -mindepth 1 -maxdepth 1 ! -name "${QT_VERSION}" -exec echo 'Cleaning Qt SDK: {}' \; -exec rm -r '{}' \; \
     && rm -rf /tmp/qt
 
+# Add linuxdeployqt
+RUN wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage" -O/usr/local/bin/linuxdeployqt \
+    && chmod a+x /usr/local/bin/linuxdeployqt
+    
 # Reconfigure locale
 RUN locale-gen en_US.UTF-8 && dpkg-reconfigure locales
 
