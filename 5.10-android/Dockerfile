@@ -60,7 +60,8 @@ RUN dpkg --add-architecture i386 && apt update && apt full-upgrade -y && apt ins
     patch \
     && apt-get -qq clean
 
-COPY build-openssl.sh extract-qt-installer.sh /tmp/qt/
+COPY extract-qt-installer.sh /tmp/qt/
+COPY build-openssl.sh /tmp/
 
 # Download & unpack Qt toolchains & clean
 RUN curl -Lo /tmp/qt/installer.run "https://download.qt-project.org/official_releases/qt/$(echo "${QT_VERSION}" | cut -d. -f 1-2)/${QT_VERSION}/qt-opensource-linux-x64-${QT_VERSION}.run" \
@@ -77,9 +78,6 @@ RUN curl -Lo /tmp/sdk-tools.zip 'https://dl.google.com/android/repository/sdk-to
 RUN mkdir /tmp/android && cd /tmp/android && curl -Lo ndk.zip "https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux-x86_64.zip" \
     && unzip -q ndk.zip && mv android-ndk-* $ANDROID_NDK_ROOT && chmod -R +rX $ANDROID_NDK_ROOT \
     && rm -rf /tmp/android
-    
-# Download and build OpenSSL for Android
-RUN /tmp/qt/build-openssl.sh
 
 # Reconfigure locale
 RUN locale-gen en_US.UTF-8 && dpkg-reconfigure locales
@@ -90,3 +88,6 @@ RUN groupadd -r user && useradd --create-home --gid user user && echo 'user ALL=
 USER user
 WORKDIR /home/user
 ENV HOME /home/user
+
+# Download and build OpenSSL for Android
+RUN /tmp/build-openssl.sh
