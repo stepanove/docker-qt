@@ -1,7 +1,7 @@
 # Minimal docker container to build project
 # Image: a12e/docker-qt:5.10-desktop
 
-FROM ubuntu:17.10
+FROM ubuntu:18.04
 MAINTAINER Aurélien B. <dev@abrooke.fr>
 
 ARG QT_VERSION=5.10.1

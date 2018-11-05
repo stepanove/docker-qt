@@ -1,7 +1,7 @@
 # Minimal docker container to build project
 # Image: a12e/docker-qt:5.10-android
 
-FROM ubuntu:17.10
+FROM ubuntu:18.04
 MAINTAINER Aurélien B. <dev@abrooke.fr>
 
 ARG QT_VERSION=5.10.1
@@ -9,7 +9,7 @@ ARG NDK_VERSION=r17b
 ARG SDK_PLATFORM=android-21
 ARG SDK_BUILD_TOOLS=21.1.2
 ARG SDK_PACKAGES="tools platform-tools"
-ARG OPENSSL_VERSION=1.0.2o
+ARG OPENSSL_VERSION=1.0.2p
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV QT_PATH /opt/Qt
