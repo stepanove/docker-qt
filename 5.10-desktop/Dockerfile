@@ -1,10 +1,11 @@
 # Minimal docker container to build project
 # Image: a12e/docker-qt:5.10-desktop
 
-FROM ubuntu:18.04
+FROM ubuntu:16.04
 MAINTAINER Aurélien B. <dev@abrooke.fr>
 
 ARG QT_VERSION=5.10.1
+ARG SDL_VERSION=2.0.9
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV QT_PATH /opt/Qt
@@ -35,7 +36,6 @@ RUN apt update && apt full-upgrade -y && apt install -y --no-install-recommends 
     libxrender1 \
     libfontconfig1 \
     libdbus-1-3 \
-    libsdl2-dev \
     libssl-dev \
     wget \
     fuse \
@@ -53,6 +53,10 @@ RUN curl -Lo /tmp/qt/installer.run "https://download.qt-project.org/official_rel
 # Add linuxdeployqt
 RUN wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage" -O/usr/local/bin/linuxdeployqt \
     && chmod a+x /usr/local/bin/linuxdeployqt
+
+# Add SDL
+COPY build-sdl.sh /tmp/
+RUN /tmp/build-sdl.sh
     
 # Reconfigure locale
 RUN locale-gen en_US.UTF-8 && dpkg-reconfigure locales

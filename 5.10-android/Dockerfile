@@ -1,7 +1,7 @@
 # Minimal docker container to build project
 # Image: a12e/docker-qt:5.10-android
 
-FROM ubuntu:18.04
+FROM ubuntu:16.04
 MAINTAINER Aurélien B. <dev@abrooke.fr>
 
 ARG QT_VERSION=5.10.1
@@ -61,7 +61,6 @@ RUN dpkg --add-architecture i386 && apt update && apt full-upgrade -y && apt ins
     && apt-get -qq clean
 
 COPY extract-qt-installer.sh /tmp/qt/
-COPY build-openssl.sh /tmp/
 
 # Download & unpack Qt toolchains & clean
 RUN curl -Lo /tmp/qt/installer.run "https://download.qt-project.org/official_releases/qt/$(echo "${QT_VERSION}" | cut -d. -f 1-2)/${QT_VERSION}/qt-opensource-linux-x64-${QT_VERSION}.run" \
@@ -90,4 +89,5 @@ WORKDIR /home/user
 ENV HOME /home/user
 
 # Download and build OpenSSL for Android
+COPY build-openssl.sh /tmp/
 RUN /tmp/build-openssl.sh
