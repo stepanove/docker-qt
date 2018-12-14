@@ -1,59 +1,75 @@
-Qt toolchain images
-===================
+These Docker images allow you to very easily build a Qt app accross all platforms. You may use build system (e.g. Gitlab CI) to fully leverage these images.
 
-* qt:5.4-desktop
-* qt:5.4-android
-* qt:5.7-desktop
-* qt:5.7-android
-* qt:5.9-desktop
-* qt:5.9-android
-* qt:5.10-desktop
-* qt:5.10-android
-* qt:5.11-desktop
-* qt:5.11-android
-* qt:5.12-desktop
-* qt:5.12-android
+Qt toolchain Docker images
+==========================
 
-Usage:
-------
+Qt 5.9.7 LTS
+* `a12e/docker-qt:5.9-android_armv7` (Platform 21, NDK r17c [gcc], OpenSSL 1.0.2q)
+* `a12e/docker-qt:5.9-gcc_64` (Ubuntu 16.04 LTS, SDL 2.0.9, linuxdeployqt)
 
-1. Install required specific dependencies:
+Qt 5.10.1
+* `a12e/docker-qt:5.10-android_armv7` (Platform 21, NDK r17c [gcc], OpenSSL 1.0.2q)
+* `a12e/docker-qt:5.10-gcc_64` (Ubuntu 16.04 LTS, SDL 2.0.9, linuxdeployqt)
 
-  ```sh
-sudo apt-get -qq update && sudo apt-get install -qq -y <packages>
-```
-2. Clone repo with source
+Qt 5.12.0 LTS
+* `a12e/docker-qt:5.12-android_armv7` (Platform 21, NDK r18b [clang], OpenSSL 1.0.2q)
+* `a12e/docker-qt:5.12-android_arm64_v8a` (Platform 21, NDK r18b [clang], OpenSSL 1.0.2q)
+* `a12e/docker-qt:5.12-android_x86` (Platform 21, NDK r18b [clang], OpenSSL 1.0.2q)
+* `a12e/docker-qt:5.12-gcc_64` (Ubuntu 16.04 LTS, SDL 2.0.9, linuxdeployqt)
 
-  ```sh
+Android example
+---------------
+
+`docker run -it --rm a12e/docker-qt:5.12-android_armv7`
+and/or 
+`docker run -it --rm a12e/docker-qt:5.12-android_arm64_v8a`
+and/or 
+`docker run -it --rm a12e/docker-qt:5.12-android_x86`
+
+```sh
+# Clone repo with source
 git clone --recursive <repo> ~/src
-```
-3. Make build dir & cd into
-
-  ```sh
+# Make build dir & cd into
 mkdir ~/build && cd ~/build
-```
-4. Run qmake
-
-  ```sh
-qmake -r ~/src
-```
-5. Run make
-
-  ```sh
-make -j4
-```
-6. Run make install 
-
-  ```sh
+# Run qmake, optional: ship the OpenSSL libraries
+qmake -r ~/src ANDROID_EXTRA_LIBS+=$ANDROID_DEV/lib/libcrypto.so ANDROID_EXTRA_LIBS+=$ANDROID_DEV/lib/libssl.so
+# Run make
+make
+# Run make install 
 make install INSTALL_ROOT=$HOME/dist
-```
-7. *Android*: run apk creation
-
-  ```sh
-androiddeployqt --input ~/src/<android json> --output ~/dist --deployment bundled --gradle --release
+# Create APK
+androiddeployqt --input android-libMyAppName.so-deployment-settings.json --output dist/ --android-platform $SDK_PLATFORM --deployment bundled --gradle --release
 ```
 
-Links
+Linux example
+-------------
+
+`docker run -it --rm a12e/docker-qt:5.12-gcc_64`
+
+```sh
+# Install required specific dependencies:
+sudo apt-get -qq update && sudo apt-get install -qq -y libssl-dev
+# Clone repo with source
+git clone --recursive <repo> ~/src
+# Make build dir & cd into
+mkdir ~/build && cd ~/build
+# Run qmake
+qmake -r ~/src
+# Run make
+make
+# Run make install 
+make install INSTALL_ROOT=$HOME/appdir
+# Prepare AppImage, deploy libs
+linuxdeployqt appdir/usr/share/applications/*.desktop -bundle-non-qt-libs -qmldir=~/src/resources/ -extra-plugins=iconengines
+# Optional: copy other files needed in the AppImage
+mkdir -p appdir/usr/share/my-app/files/ && cp -v needed.file appdir/usr/share/my-app/files/
+# Build the AppImage
+linuxdeployqt appdir/usr/share/applications/*.desktop -appimage
+```
+
+Notes
 -----
 
-Used extract-qt script from https://github.com/benlau/qtci/blob/master/bin/extract-qt-installer
+OpenSSL for Android is compiled and installed directly in `${ANDROID_DEV}`, and is platform-specific (API 21 in most cases). You can compile against it transparently, but you need to ship the libraries for run time. Look at `ANDROID_EXTRA_LIBS`.
+
+Linux images are built inside a 16.04 LTS Ubuntu and not 18.04 LTS, to allow the AppImage's to be run on older systems. Otherwise, links to too recent versions of GLIBC are made.

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Download and compile OpenSSL for Android in ~/openssl
+# Download and compile OpenSSL for Android, and install it directly in the Android NDK development files 
 # Based on http://doc.qt.io/qt-5/opensslsupport.html
 # Companion script for the Docker image a12e/docker-qt
 # Aurélien Brooke - License: MIT
@@ -53,14 +53,22 @@ EOF
 
 source Setenv-android.sh
 
-./config shared \
---prefix=$(pwd)/out \
+./config shared zlib \
+--prefix=${ANDROID_DEV} \
 --sysroot=$ANDROID_NDK_SYSROOT \
 -I$ANDROID_NDK_ROOT/sysroot/usr/include \
 -I$ANDROID_NDK_ROOT/sysroot/usr/include/$ANDROID_NDK_TOOLCHAIN_PREFIX \
 -I$ANDROID_NDK_ROOT/sources/cxx-stl/gnu-libstdc++/$ANDROID_NDK_TOOLCHAIN_VERSION/include \
 -I$ANDROID_NDK_ROOT/sources/cxx-stl/gnu-libstdc++/$ANDROID_NDK_TOOLCHAIN_VERSION/libs/armeabi-v7a/include
 
+make -j$(nproc) depend
 make -j$(nproc) CALC_VERSIONS="SHLIB_COMPAT=; SHLIB_SOVER=" build_libs
+# we didn't build the "openssl" binary (error of stdout and stderr not found when linking) so we fake the file so that the install_sw step doesn't fail
+touch apps/openssl
+# the following is to PREVENT the install script from creating links, instead of properly copying the .so files (what is this???)
+mkdir -p ${ANDROID_DEV}/lib
+echo "place-holder make target for avoiding symlinks" >> ${ANDROID_DEV}/lib/link-shared
+make -j$(nproc) SHLIB_EXT=.so install_sw
+rm -fv ${ANDROID_DEV}/lib/link-shared
 
-ls -alh ~/openssl/*.so ~/openssl/*.a
+ls -alh ${ANDROID_DEV}/lib
