@@ -53,9 +53,14 @@ RUN /tmp/build/install-qt.sh
 
 # Download, build & install SDL
 COPY scripts/install-sdl.sh /tmp/build/
-RUN /tmp/build/install-sdl.sh \    
+RUN /tmp/build/install-sdl.sh
+
+# Download & install linuxdeployqt
+COPY scripts/install-linuxdeployqt.sh /tmp/build/
+RUN /tmp/build/install-linuxdeployqt.sh
+
 # Reconfigure locale
-    && locale-gen en_US.UTF-8 && dpkg-reconfigure locales \
+RUN locale-gen en_US.UTF-8 && dpkg-reconfigure locales \
 # Add group & user
     && groupadd -r user && useradd --create-home --gid user user && echo 'user ALL=NOPASSWD: ALL' > /etc/sudoers.d/user
 
