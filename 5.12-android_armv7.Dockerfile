@@ -6,10 +6,10 @@ MAINTAINER Aurélien Brooke <dev@abrooke.fr>
 
 ARG NDK_VERSION=r18b
 ARG OPENSSL_VERSION=1.0.2q
-ARG QT_VERSION=5.12.0
+ARG QT_VERSION=5.12.2
 ARG SDK_BUILD_TOOLS=28.0.3
 ARG SDK_PACKAGES="tools platform-tools"
-ARG SDK_PLATFORM=android-21
+ARG SDK_PLATFORM=android-28
 
 ENV \
     ANDROID_HOME=/opt/android-sdk \
