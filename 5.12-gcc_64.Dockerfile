@@ -43,7 +43,7 @@ RUN apt update && apt full-upgrade -y && apt install -y --no-install-recommends 
     wget \
     fuse \
     file \
-    libxkbcommon-dev \
+    libxkbcommon-x11-0 \
     && apt-get -qq clean
 
 COPY 3rdparty/* /tmp/build/
